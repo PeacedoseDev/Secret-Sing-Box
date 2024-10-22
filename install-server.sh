@@ -1155,7 +1155,7 @@ server_config() {
 cat > /etc/sing-box/config.json <<EOF
 {
   "log": {
-    "level": "fatal",
+    "level": "warn",
     "output": "box.log",
     "timestamp": true
   },
@@ -1211,11 +1211,13 @@ cat > /etc/sing-box/config.json <<EOF
       "tag": "vless-in",
       "listen": "127.0.0.1",
       "listen_port": 11443,
+      "packet_encoding": "xudp",
       "sniff": true,
       "users": [
         {
           "name": "1-me",
-          "uuid": "${uuid}"
+          "uuid": "${uuid}",
+          "flow": "xtls-rprx-vision"
         }
       ],
       "transport": {
@@ -1264,54 +1266,6 @@ cat > /etc/sing-box/config.json <<EOF
           "category-ads-all"
         ],
         "outbound": "block"
-      },
-      {
-        "protocol": "quic",
-        "outbound": "block"
-      },
-      {
-        "rule_set": [
-          "geoip-ru",
-          "gov-ru",
-          "openai",
-          "telegram"
-        ],
-        "domain_suffix": [
-          ".ru",
-          ".su",
-          ".ru.com",
-          ".ru.net",
-          "rutracker.org",
-          "habr.com",
-          "ntc.party",
-          "gemini.google.com",
-          "bard.google.com",
-          "aistudio.google.com",
-          "makersuite.google.com",
-          "alkalimakersuite-pa.clients6.google.com",
-          "alkalicore-pa.clients6.google.com",
-          "aida.googleapis.com",
-          "generativelanguage.googleapis.com",
-          "proactivebackend-pa.googleapis.com",
-          "geller-pa.googleapis.com",
-          "deepmind.com",
-          "deepmind.google",
-          "generativeai.google",
-          "ai.google.dev",
-          "canva.com"
-        ],
-        "domain_keyword": [
-          "xn--",
-          "generativelanguage",
-          "generativeai"
-        ],
-        "outbound": "warp"
-      },
-      {
-        "rule_set": [
-          "google"
-        ],
-        "outbound": "IPv4"
       }
     ],
     "rule_set": [
@@ -1352,6 +1306,7 @@ cat > /etc/sing-box/config.json <<EOF
         "url": "https://github.com/SagerNet/sing-geosite/raw/rule-set/geosite-category-ads-all.srs"
       }
     ]
+    "final": "warp"
   },
   "experimental": {
     "cache_file": {
@@ -1379,7 +1334,7 @@ touch /var/www/${subspath}/1-me-TRJ-CLIENT.json
 cat > /var/www/${subspath}/1-me-TRJ-CLIENT.json <<EOF
 {
   "log": {
-    "level": "fatal",
+    "level": "warn",
     "timestamp": true
   },
   "dns": {
@@ -1405,96 +1360,6 @@ cat > /var/www/${subspath}/1-me-TRJ-CLIENT.json <<EOF
         ],
         "server": "dns-block",
         "disable_cache": true
-      },
-      {
-        "rule_set": [
-          "telegram"
-        ],
-        "server": "dns-remote"
-      },
-      {
-        "domain_suffix": [
-          ".ru",
-          ".su",
-          ".ru.com",
-          ".ru.net",
-          "${domain}",
-          "wikipedia.org"
-        ],
-        "domain_keyword": [
-          "xn--",
-          "researchgate",
-          "springer",
-          "nextcloud",
-          "skype",
-          "wiki",
-          "kaspersky",
-          "stepik",
-          "likee",
-          "snapchat",
-          "yappy",
-          "pikabu",
-          "okko",
-          "wink",
-          "kion",
-          "viber",
-          "roblox",
-          "ozon",
-          "wildberries",
-          "aliexpress"
-        ],
-        "rule_set": [
-          "geoip-ru",
-          "gov-ru",
-          "yandex",
-          "vk",
-          "mailru",
-          "zoom",
-          "reddit",
-          "twitch",
-          "tumblr",
-          "4chan",
-          "pinterest",
-          "deviantart",
-          "duckduckgo",
-          "yahoo",
-          "mozilla",
-          "category-android-app-download",
-          "aptoide",
-          "samsung",
-          "huawei",
-          "apple",
-          "microsoft",
-          "nvidia",
-          "xiaomi",
-          "hp",
-          "asus",
-          "lenovo",
-          "lg",
-          "oracle",
-          "adobe",
-          "blender",
-          "drweb",
-          "gitlab",
-          "debian",
-          "canonical",
-          "python",
-          "doi",
-          "elsevier",
-          "sciencedirect",
-          "clarivate",
-          "sci-hub",
-          "duolingo",
-          "aljazeera",
-          "torrent-clients"
-        ],
-        "server": "dns-local"
-      },
-      {
-        "inbound": [
-          "tun-in"
-        ],
-        "server": "dns-remote"
       }
     ],
     "final": "dns-local"
@@ -1504,12 +1369,23 @@ cat > /var/www/${subspath}/1-me-TRJ-CLIENT.json <<EOF
       "type": "tun",
       "tag": "tun-in",
       "interface_name": "tun0",
-      "stack": "gvisor",
+      "stack": "system",
       "mtu": 9000,
-      "inet4_address": "172.19.0.1/28",
+      "address": "172.19.0.1/28",
       "auto_route": true,
       "strict_route": true,
-      "sniff": true
+      "sniff": true,
+      "domain_strategy": "ipv4_only"
+    },
+    {
+      "type": "mixed",
+      "tag": "socks-in",
+      "listen": "127.0.0.1",
+      "listen_port": 1080,
+      "tcp_fast_open": true,
+      "sniff": true,
+      "set_system_proxy": false,
+      "domain_strategy": "ipv4_only"
     }
   ],
   "outbounds": [
@@ -1556,10 +1432,6 @@ cat > /var/www/${subspath}/1-me-TRJ-CLIENT.json <<EOF
         "outbound": "dns-out"
       },
       {
-        "ip_is_private": true,
-        "outbound": "direct"
-      },
-      {
         "protocol": "quic",
         "outbound": "direct"
       },
@@ -1570,94 +1442,40 @@ cat > /var/www/${subspath}/1-me-TRJ-CLIENT.json <<EOF
         "outbound": "block"
       },
       {
-        "rule_set": [
-          "telegram"
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "inbound": "socks-in"
+          },
+          {
+            "rule_set": "antizapret"
+          },
+          {
+            "process_name": [
+              "Discord.exe",
+              "updater.exe",
+              "firefox.exe"
+            ]
+          }
         ],
         "outbound": "proxy"
       },
       {
-        "domain_suffix": [
-          ".ru",
-          ".su",
-          ".ru.com",
-          ".ru.net",
-          "${domain}",
-          "wikipedia.org"
-        ],
-        "domain_keyword": [
-          "xn--",
-          "researchgate",
-          "springer",
-          "nextcloud",
-          "skype",
-          "wiki",
-          "kaspersky",
-          "stepik",
-          "likee",
-          "snapchat",
-          "yappy",
-          "pikabu",
-          "okko",
-          "wink",
-          "kion",
-          "viber",
-          "roblox",
-          "ozon",
-          "wildberries",
-          "aliexpress"
-        ],
-        "rule_set": [
-          "geoip-ru",
-          "gov-ru",
-          "yandex",
-          "vk",
-          "mailru",
-          "zoom",
-          "reddit",
-          "twitch",
-          "tumblr",
-          "4chan",
-          "pinterest",
-          "deviantart",
-          "duckduckgo",
-          "yahoo",
-          "mozilla",
-          "category-android-app-download",
-          "aptoide",
-          "samsung",
-          "huawei",
-          "apple",
-          "microsoft",
-          "nvidia",
-          "xiaomi",
-          "hp",
-          "asus",
-          "lenovo",
-          "lg",
-          "oracle",
-          "adobe",
-          "blender",
-          "drweb",
-          "gitlab",
-          "debian",
-          "canonical",
-          "python",
-          "doi",
-          "elsevier",
-          "sciencedirect",
-          "clarivate",
-          "sci-hub",
-          "duolingo",
-          "aljazeera",
-          "torrent-clients"
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "rule_set": "geoip-ru"
+          },
+          {
+            "port": [
+              22,
+              3389
+            ]
+          }
         ],
         "outbound": "direct"
-      },
-      {
-        "inbound": [
-          "tun-in"
-        ],
-        "outbound": "proxy"
       }
     ],
     "rule_set": [
@@ -1932,6 +1750,7 @@ cat > /var/www/${subspath}/1-me-TRJ-CLIENT.json <<EOF
         "url": "https://raw.githubusercontent.com/FPPweb3/sb-rule-sets/main/torrent-clients.json"
       }
     ],
+    "final": "direct",
     "auto_detect_interface": true,
     "override_android_vpn": true
   },

@@ -17,9 +17,9 @@ check_root() {
 templates() {
     if [ -f /etc/haproxy/auth.lua ]
     then
-        curl -s -o /var/www/${subspath}/template.json https://raw.githubusercontent.com/BLUEBL0B/Secret-Sing-Box/master/Config-Examples-HAProxy/Client-Trojan-HAProxy.json
+        curl -s -o /var/www/${subspath}/template.json https://raw.githubusercontent.com/PeacedoseDev/Secret-Sing-Box/master/Config-Examples-HAProxy/Client-Trojan-HAProxy.json
     else
-        curl -s -o /var/www/${subspath}/template.json https://raw.githubusercontent.com/BLUEBL0B/Secret-Sing-Box/master/Config-Examples-WS/Client-Trojan-WS.json
+        curl -s -o /var/www/${subspath}/template.json https://raw.githubusercontent.com/PeacedoseDev/Secret-Sing-Box/master/Config-Examples-WS/Client-Trojan-WS.json
     fi
 
     if [ ! -f /var/www/${subspath}/template-loc.json ]
@@ -569,7 +569,7 @@ check_nextlink() {
 }
 
 chain_end() {
-    config_temp=$(curl -s https://raw.githubusercontent.com/BLUEBL0B/Secret-Sing-Box/master/Config-Examples-HAProxy/config.json)
+    config_temp=$(curl -s https://raw.githubusercontent.com/PeacedoseDev/Secret-Sing-Box/master/Config-Examples-HAProxy/config.json)
 
     if [ $(jq -e . >/dev/null 2>&1 <<< "${config_temp}"; echo $?) -eq 0 ] && [ -n "${config_temp}" ]
     then
